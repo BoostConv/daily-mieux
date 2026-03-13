@@ -43,66 +43,60 @@ export default async function HomePage() {
       {/* ═══════ HERO ═══════ */}
       <section className="bg-bg-secondary pb-2 pt-6 md:pb-4 md:pt-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-4 md:grid-cols-12 md:gap-5">
-            {/* Main featured */}
-            {featuredArticle && (
-              <div className="md:col-span-7 lg:col-span-8">
-                <Link
-                  href={`/${featuredArticle.category.slug}/${featuredArticle.slug}`}
-                  className="group relative block overflow-hidden rounded-2xl"
+          {/* Main featured — full width */}
+          {featuredArticle && (
+            <Link
+              href={`/${featuredArticle.category.slug}/${featuredArticle.slug}`}
+              className="group relative block overflow-hidden rounded-2xl"
+            >
+              <div className="relative aspect-[21/9] w-full md:aspect-[21/9]">
+                {featuredArticle.coverImage ? (
+                  <Image
+                    src={featuredArticle.coverImage}
+                    alt={featuredArticle.title}
+                    fill
+                    className="object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+                    priority
+                    sizes="100vw"
+                  />
+                ) : (
+                  <div className="h-full w-full bg-gradient-to-br from-navy to-blue" />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-navy/90 via-navy/30 to-transparent" />
+              </div>
+
+              <div className="absolute inset-x-0 bottom-0 p-5 md:p-10">
+                <span
+                  className="mb-3 inline-flex rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-white"
+                  style={{ backgroundColor: featuredArticle.category.color || "var(--blue)" }}
                 >
-                  <div className="relative aspect-[16/9] w-full">
-                    {featuredArticle.coverImage ? (
-                      <Image
-                        src={featuredArticle.coverImage}
-                        alt={featuredArticle.title}
-                        fill
-                        className="object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-                        priority
-                        sizes="(max-width: 768px) 100vw, 66vw"
-                      />
-                    ) : (
-                      <div className="h-full w-full bg-gradient-to-br from-navy to-blue" />
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-navy/90 via-navy/30 to-transparent" />
-                  </div>
-
-                  <div className="absolute inset-x-0 bottom-0 p-5 md:p-8">
-                    <span
-                      className="mb-3 inline-flex rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-white"
-                      style={{ backgroundColor: featuredArticle.category.color || "var(--blue)" }}
-                    >
-                      {featuredArticle.category.name}
-                    </span>
-                    <h1 className="mb-2 max-w-xl font-[family-name:var(--font-heading)] text-2xl font-bold leading-tight text-white md:text-4xl">
-                      {featuredArticle.title}
-                    </h1>
-                    <p className="mb-4 hidden max-w-lg text-sm text-white/60 md:block">
-                      {featuredArticle.excerpt}
-                    </p>
-                    <div className="flex items-center gap-3 text-xs text-white/40">
-                      <span>{featuredArticle.author.name}</span>
-                      <span className="h-1 w-1 rounded-full bg-white/20" />
-                      {featuredArticle.publishedAt && (
-                        <time>{formatDate(featuredArticle.publishedAt)}</time>
-                      )}
-                    </div>
-                  </div>
-                </Link>
+                  {featuredArticle.category.name}
+                </span>
+                <h1 className="mb-2 max-w-2xl font-[family-name:var(--font-heading)] text-2xl font-bold leading-tight text-white md:text-5xl">
+                  {featuredArticle.title}
+                </h1>
+                <p className="mb-4 hidden max-w-xl text-base text-white/60 md:block">
+                  {featuredArticle.excerpt}
+                </p>
+                <div className="flex items-center gap-3 text-xs text-white/40">
+                  <span>{featuredArticle.author.name}</span>
+                  <span className="h-1 w-1 rounded-full bg-white/20" />
+                  {featuredArticle.publishedAt && (
+                    <time>{formatDate(featuredArticle.publishedAt)}</time>
+                  )}
+                </div>
               </div>
-            )}
+            </Link>
+          )}
 
-            {/* Side articles — classic card style */}
-            {heroSide.length > 0 && (
-              <div className="flex flex-row gap-4 md:col-span-5 md:flex-col lg:col-span-4">
-                {heroSide.map((article) => (
-                  <div key={article.slug} className="flex-1">
-                    <ArticleCard article={article} />
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          {/* 2 articles below hero */}
+          {heroSide.length > 0 && (
+            <div className="mt-4 grid gap-4 sm:grid-cols-2 md:mt-5 md:gap-5">
+              {heroSide.map((article) => (
+                <ArticleCard key={article.slug} article={article} />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

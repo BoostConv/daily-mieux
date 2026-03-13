@@ -41,7 +41,12 @@ interface ContentData {
 }
 
 export function AdvertorialTemplate({ article }: ArticleProps) {
-  const data: ContentData = JSON.parse(article.content);
+  const raw = JSON.parse(article.content);
+  const data: ContentData = {
+    sections: raw.sections || [],
+    products: raw.products || [],
+    verdict: raw.verdict || "",
+  };
 
   return (
     <article className="min-h-screen bg-white">

@@ -41,7 +41,16 @@ interface ContentData {
 }
 
 export function GuideTemplate({ article }: ArticleProps) {
-  const data: ContentData = JSON.parse(article.content);
+  const raw = JSON.parse(article.content);
+  const data: ContentData = {
+    sections: (raw.sections || []).map((s: { id?: string; title: string; body: string }, i: number) => ({
+      id: s.id || `section-${i}`,
+      title: s.title,
+      body: s.body,
+    })),
+    tips: raw.tips || [],
+    faq: raw.faq || [],
+  };
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [activeSection, setActiveSection] = useState<string>(
     data.sections[0]?.id || ""

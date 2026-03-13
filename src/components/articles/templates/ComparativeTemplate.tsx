@@ -73,7 +73,16 @@ function averageRating(ratings: Record<string, number>): number {
 }
 
 export function ComparativeTemplate({ article }: ArticleProps) {
-  const data: ContentData = JSON.parse(article.content);
+  const raw = JSON.parse(article.content);
+  const hasSectionsOnly = !raw.criteria && !raw.products && raw.sections;
+  const data: ContentData = {
+    criteria: raw.criteria || [],
+    products: raw.products || [],
+    winner: raw.winner || "",
+    verdict: raw.verdict || "",
+  };
+  // Fallback sections for editorial-style comparatives
+  const fallbackSections: { title: string; body: string }[] = hasSectionsOnly ? raw.sections : [];
 
   return (
     <article className="min-h-screen bg-white">
@@ -140,7 +149,31 @@ export function ComparativeTemplate({ article }: ArticleProps) {
         </div>
       </div>
 
+      {/* Fallback: editorial sections when no structured product data */}
+      {fallbackSections.length > 0 && (
+        <div className="mx-auto max-w-4xl px-4 py-10 space-y-10">
+          {fallbackSections.map((section, i) => (
+            <motion.section
+              key={i}
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-60px" }}
+              transition={{ duration: 0.4, delay: i * 0.05 }}
+            >
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
+                {section.title}
+              </h2>
+              <div
+                className="prose prose-lg prose-gray max-w-none"
+                dangerouslySetInnerHTML={{ __html: section.body }}
+              />
+            </motion.section>
+          ))}
+        </div>
+      )}
+
       {/* Product Cards */}
+      {data.products.length > 0 && (
       <div className="mx-auto max-w-5xl px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {data.products.map((product, i) => (
@@ -272,8 +305,10 @@ export function ComparativeTemplate({ article }: ArticleProps) {
           ))}
         </div>
       </div>
+      )}
 
       {/* Comparison Table */}
+      {data.criteria.length > 0 && data.products.length > 0 && (
       <div className="bg-gray-50 py-12">
         <div className="mx-auto max-w-5xl px-4">
           <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
@@ -355,6 +390,7 @@ export function ComparativeTemplate({ article }: ArticleProps) {
           </div>
         </div>
       </div>
+      )}
 
       {/* Winner */}
       {data.winner && (

@@ -62,7 +62,19 @@ function getCircleColor(score: number): string {
 }
 
 export function ReviewTemplate({ article }: ArticleProps) {
-  const data: ContentData = JSON.parse(article.content);
+  const raw = JSON.parse(article.content);
+  const hasSectionsOnly = !raw.overallScore && !raw.criteria && raw.sections;
+  const data: ContentData = {
+    overallScore: raw.overallScore || 0,
+    criteria: raw.criteria || [],
+    pros: raw.pros || [],
+    cons: raw.cons || [],
+    forWho: raw.forWho || "",
+    alternatives: raw.alternatives || [],
+    body: raw.body || "",
+  };
+  // Fallback sections for editorial-style reviews
+  const fallbackSections: { title: string; body: string }[] = hasSectionsOnly ? raw.sections : [];
 
   return (
     <article className="min-h-screen bg-white">
@@ -105,6 +117,7 @@ export function ReviewTemplate({ article }: ArticleProps) {
         </div>
 
         {/* Score Circle overlapping hero */}
+        {data.overallScore > 0 && (
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -120,10 +133,11 @@ export function ReviewTemplate({ article }: ArticleProps) {
             <span className="text-xs font-medium text-gray-400">/10</span>
           </div>
         </motion.div>
+        )}
       </div>
 
       {/* Author & Meta */}
-      <div className="mx-auto max-w-4xl px-4 pt-16 pb-5 flex flex-wrap items-center gap-4 text-sm text-gray-500 border-b border-gray-100">
+      <div className={`mx-auto max-w-4xl px-4 ${data.overallScore > 0 ? 'pt-16' : 'pt-5'} pb-5 flex flex-wrap items-center gap-4 text-sm text-gray-500 border-b border-gray-100`}>
         <div className="flex items-center gap-2">
           {article.author.avatar ? (
             <Image
@@ -152,7 +166,31 @@ export function ReviewTemplate({ article }: ArticleProps) {
         </div>
       </div>
 
+      {/* Fallback: editorial sections when no structured review data */}
+      {fallbackSections.length > 0 && (
+        <div className="mx-auto max-w-4xl px-4 py-10 space-y-10">
+          {fallbackSections.map((section, i) => (
+            <motion.section
+              key={i}
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-60px" }}
+              transition={{ duration: 0.4, delay: i * 0.05 }}
+            >
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
+                {section.title}
+              </h2>
+              <div
+                className="prose prose-lg prose-gray max-w-none"
+                dangerouslySetInnerHTML={{ __html: section.body }}
+              />
+            </motion.section>
+          ))}
+        </div>
+      )}
+
       {/* Score Breakdown */}
+      {data.criteria.length > 0 && (
       <div className="mx-auto max-w-4xl px-4 py-10">
         <h2 className="text-xl font-bold text-gray-900 mb-6">
           &Eacute;valuation d&eacute;taill&eacute;e
@@ -190,8 +228,10 @@ export function ReviewTemplate({ article }: ArticleProps) {
           ))}
         </div>
       </div>
+      )}
 
       {/* Pros & Cons */}
+      {(data.pros.length > 0 || data.cons.length > 0) && (
       <div className="mx-auto max-w-4xl px-4 pb-10">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Pros */}
@@ -245,6 +285,7 @@ export function ReviewTemplate({ article }: ArticleProps) {
           </motion.div>
         </div>
       </div>
+      )}
 
       {/* For Who */}
       {data.forWho && (

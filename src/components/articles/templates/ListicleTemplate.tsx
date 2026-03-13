@@ -45,7 +45,18 @@ interface ContentData {
 }
 
 export function ListicleTemplate({ article }: ArticleProps) {
-  const data: ContentData = JSON.parse(article.content);
+  const raw = JSON.parse(article.content);
+  // Support both "items" (native listicle) and "sections" (fallback from editorial content)
+  const rawItems = raw.items || (raw.sections || []).map((s: { title: string; body: string; image?: string; ctaLabel?: string; ctaUrl?: string }) => ({
+    title: s.title,
+    body: s.body,
+    image: s.image,
+    ctaLabel: s.ctaLabel,
+    ctaUrl: s.ctaUrl,
+  }));
+  const data: ContentData = {
+    items: rawItems,
+  };
   const [tocOpen, setTocOpen] = useState(false);
 
   const handleScrollTo = (index: number) => {
