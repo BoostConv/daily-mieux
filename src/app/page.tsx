@@ -1,65 +1,204 @@
 import Image from "next/image";
+import Link from "next/link";
+import { ArrowRight, TrendingUp } from "lucide-react";
+import { prisma } from "@/lib/db";
+import ArticleCard from "@/components/articles/ArticleCard";
+import ArticleGrid from "@/components/articles/ArticleGrid";
+import { formatDate } from "@/lib/utils";
+import NewsletterCTA from "./NewsletterCTA";
 
-export default function Home() {
+export default async function HomePage() {
+  const featuredArticle = await prisma.article.findFirst({
+    where: { featured: true, status: "published" },
+    include: { category: true, author: true },
+    orderBy: { publishedAt: "desc" },
+  });
+
+  const latestArticles = await prisma.article.findMany({
+    where: { status: "published", featured: false },
+    include: { category: true, author: true },
+    orderBy: { publishedAt: "desc" },
+    take: 9,
+  });
+
+  const categories = await prisma.category.findMany({
+    include: {
+      _count: { select: { articles: { where: { status: "published" } } } },
+      articles: {
+        where: { status: "published" },
+        orderBy: { publishedAt: "desc" },
+        take: 1,
+        select: { coverImage: true },
+      },
+    },
+    orderBy: { order: "asc" },
+  });
+
+  const heroSide = latestArticles.slice(0, 2);
+  const trendingArticles = latestArticles.slice(2, 6);
+  const moreArticles = latestArticles.slice(6, 9);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <>
+      {/* ═══════ HERO ═══════ */}
+      <section className="bg-bg-secondary pb-2 pt-6 md:pb-4 md:pt-10">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid gap-4 md:grid-cols-12 md:gap-5">
+            {/* Main featured */}
+            {featuredArticle && (
+              <div className="md:col-span-7 lg:col-span-8">
+                <Link
+                  href={`/${featuredArticle.category.slug}/${featuredArticle.slug}`}
+                  className="group relative block overflow-hidden rounded-2xl"
+                >
+                  <div className="relative aspect-[16/9] w-full">
+                    {featuredArticle.coverImage ? (
+                      <Image
+                        src={featuredArticle.coverImage}
+                        alt={featuredArticle.title}
+                        fill
+                        className="object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+                        priority
+                        sizes="(max-width: 768px) 100vw, 66vw"
+                      />
+                    ) : (
+                      <div className="h-full w-full bg-gradient-to-br from-navy to-blue" />
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-navy/90 via-navy/30 to-transparent" />
+                  </div>
+
+                  <div className="absolute inset-x-0 bottom-0 p-5 md:p-8">
+                    <span
+                      className="mb-3 inline-flex rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-white"
+                      style={{ backgroundColor: featuredArticle.category.color || "var(--blue)" }}
+                    >
+                      {featuredArticle.category.name}
+                    </span>
+                    <h1 className="mb-2 max-w-xl font-[family-name:var(--font-heading)] text-2xl font-bold leading-tight text-white md:text-4xl">
+                      {featuredArticle.title}
+                    </h1>
+                    <p className="mb-4 hidden max-w-lg text-sm text-white/60 md:block">
+                      {featuredArticle.excerpt}
+                    </p>
+                    <div className="flex items-center gap-3 text-xs text-white/40">
+                      <span>{featuredArticle.author.name}</span>
+                      <span className="h-1 w-1 rounded-full bg-white/20" />
+                      {featuredArticle.publishedAt && (
+                        <time>{formatDate(featuredArticle.publishedAt)}</time>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              </div>
+            )}
+
+            {/* Side articles — classic card style */}
+            {heroSide.length > 0 && (
+              <div className="flex flex-row gap-4 md:col-span-5 md:flex-col lg:col-span-4">
+                {heroSide.map((article) => (
+                  <div key={article.slug} className="flex-1">
+                    <ArticleCard article={article} />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+      </section>
+
+      {/* ═══════ RUBRIQUES ═══════ */}
+      {categories.length > 0 && (
+        <section className="bg-bg-secondary pb-8 pt-10 md:pb-12 md:pt-14">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mb-6 flex items-center justify-between">
+              <h2 className="font-[family-name:var(--font-heading)] text-xl font-bold text-navy md:text-2xl">
+                Nos rubriques
+              </h2>
+            </div>
+
+            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none md:grid md:grid-cols-7 md:overflow-visible md:pb-0">
+              {categories.map((category) => {
+                const coverImg = category.articles[0]?.coverImage;
+                return (
+                  <Link
+                    key={category.slug}
+                    href={`/${category.slug}`}
+                    className="group relative flex-shrink-0 overflow-hidden rounded-2xl md:flex-shrink"
+                    style={{ minWidth: "130px" }}
+                  >
+                    {/* Background image or gradient */}
+                    <div className="relative aspect-[3/4] w-full md:aspect-[4/5]">
+                      {coverImg ? (
+                        <Image
+                          src={coverImg}
+                          alt={category.name}
+                          fill
+                          className="object-cover transition-transform duration-500 group-hover:scale-110"
+                          sizes="(max-width: 768px) 130px, 14vw"
+                        />
+                      ) : (
+                        <div
+                          className="h-full w-full"
+                          style={{
+                            background: `linear-gradient(135deg, ${category.color || "#416CC2"}, ${category.color || "#416CC2"}88)`,
+                          }}
+                        />
+                      )}
+                      <div
+                        className="absolute inset-0 opacity-70 transition-opacity group-hover:opacity-80"
+                        style={{
+                          background: `linear-gradient(to top, ${category.color || "#0B1956"}ee 0%, ${category.color || "#0B1956"}40 50%, transparent 100%)`,
+                        }}
+                      />
+                    </div>
+
+                    {/* Content */}
+                    <div className="absolute inset-x-0 bottom-0 p-3 md:p-4">
+                      <span className="mb-1 block text-xl md:text-2xl">{category.icon}</span>
+                      <h3 className="text-sm font-bold text-white md:text-base">
+                        {category.name}
+                      </h3>
+                      <span className="text-[10px] text-white/50">
+                        {category._count.articles} article{category._count.articles !== 1 ? "s" : ""}
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ═══════ TENDANCES ═══════ */}
+      {trendingArticles.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 md:py-16 lg:px-8">
+          <div className="mb-8 flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-pale">
+              <TrendingUp className="h-4 w-4 text-blue" />
+            </div>
+            <h2 className="font-[family-name:var(--font-heading)] text-xl font-bold text-navy md:text-2xl">
+              Tendances
+            </h2>
+          </div>
+
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {trendingArticles.map((article) => (
+              <ArticleCard key={article.slug} article={article} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ═══════ MORE ARTICLES ═══════ */}
+      {moreArticles.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 pb-12 sm:px-6 md:pb-16 lg:px-8">
+          <ArticleGrid articles={moreArticles} title="Articles récents" />
+        </section>
+      )}
+
+      {/* ═══════ NEWSLETTER ═══════ */}
+      <NewsletterCTA />
+    </>
   );
 }
