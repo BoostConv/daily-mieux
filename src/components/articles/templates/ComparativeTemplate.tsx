@@ -74,15 +74,13 @@ function averageRating(ratings: Record<string, number>): number {
 
 export function ComparativeTemplate({ article }: ArticleProps) {
   const raw = JSON.parse(article.content);
-  const hasSectionsOnly = !raw.criteria && !raw.products && raw.sections;
   const data: ContentData = {
     criteria: raw.criteria || [],
     products: raw.products || [],
     winner: raw.winner || "",
     verdict: raw.verdict || "",
   };
-  // Fallback sections for editorial-style comparatives
-  const fallbackSections: { title: string; body: string }[] = hasSectionsOnly ? raw.sections : [];
+  const sections: { title: string; body: string }[] = raw.sections || [];
 
   return (
     <article className="min-h-screen bg-white">
@@ -149,10 +147,10 @@ export function ComparativeTemplate({ article }: ArticleProps) {
         </div>
       </div>
 
-      {/* Fallback: editorial sections when no structured product data */}
-      {fallbackSections.length > 0 && (
+      {/* Editorial sections */}
+      {sections.length > 0 && (
         <div className="mx-auto max-w-4xl px-4 py-10 space-y-10">
-          {fallbackSections.map((section, i) => (
+          {sections.map((section, i) => (
             <motion.section
               key={i}
               initial={{ opacity: 0, y: 16 }}
@@ -165,7 +163,7 @@ export function ComparativeTemplate({ article }: ArticleProps) {
               </h2>
               <div
                 className="prose prose-lg prose-gray max-w-none"
-                dangerouslySetInnerHTML={{ __html: section.body }}
+                dangerouslySetInnerHTML={{ __html: section.body.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br/>') }}
               />
             </motion.section>
           ))}
