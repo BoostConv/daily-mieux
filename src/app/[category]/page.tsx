@@ -3,6 +3,13 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import ArticleGrid from "@/components/articles/ArticleGrid";
 
+export async function generateStaticParams() {
+  const categories = await prisma.category.findMany({
+    select: { slug: true },
+  });
+  return categories.map((c) => ({ category: c.slug }));
+}
+
 interface CategoryPageProps {
   params: Promise<{ category: string }>;
 }

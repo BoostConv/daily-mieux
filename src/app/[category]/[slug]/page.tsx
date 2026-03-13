@@ -8,6 +8,17 @@ import ReviewTemplate from "@/components/articles/templates/ReviewTemplate";
 import GuideTemplate from "@/components/articles/templates/GuideTemplate";
 import StickyCTA from "@/components/articles/StickyCTA";
 
+export async function generateStaticParams() {
+  const articles = await prisma.article.findMany({
+    where: { status: "published" },
+    include: { category: true },
+  });
+  return articles.map((a) => ({
+    category: a.category.slug,
+    slug: a.slug,
+  }));
+}
+
 interface ArticlePageProps {
   params: Promise<{ category: string; slug: string }>;
 }
@@ -53,14 +64,6 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
   if (!article || article.status !== "published") {
     notFound();
   }
-
-  // Increment views (fire and forget)
-  prisma.article
-    .update({
-      where: { id: article.id },
-      data: { views: { increment: 1 } },
-    })
-    .catch(() => {});
 
   // Determine template
   let template;
